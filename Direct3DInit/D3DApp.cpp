@@ -15,8 +15,97 @@ LRESULT D3DApp::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	switch (msg)
 	{
+	case WM_ACTIVATE:
+		if (LOWORD(wParam) == WA_INACTIVE)
+		{
+			mAppPaused = true;
+		}
+		else
+		{
+			mAppPaused = false;
+		}
+		return 0;
+
+	case WM_SIZE:
+		mClientWidth = LOWORD(lParam);
+		mClientHeight = HIWORD(lParam);
+		if (mD3DDevice)
+		{
+			if (wParam == SIZE_MINIMIZED)
+			{
+				mAppPaused = true;
+				mMinimized = true;
+				mMaximized = false;
+			}
+			else if (wParam == SIZE_MAXIMIZED)
+			{
+				mAppPaused = false;
+				mMinimized = false;
+				mMaximized = true;
+				OnResize();
+			}
+			else if (wParam == SIZE_RESTORED)
+			{
+				if (mMinimized)
+				{
+					mAppPaused = false;
+					mMinimized = false;
+					OnResize();
+
+				}
+				else if (mMaximized)
+				{
+					mAppPaused = false;
+					mMaximized = false;
+					OnResize();
+				}
+				else if (mResizing)
+				{
+
+					// If user is dragging the resize bars, we do not resize 
+					// the buffers here because as the user continuously 
+					// drags the resize bars, a stream of WM_SIZE messages are
+					// sent to the window, and it would be pointless (and slow)
+					// to resize for each WM_SIZE message received from dragging
+					// the resize bars.  So instead, we reset after the user is 
+					// done resizing the window and releases the resize bars, which 
+					// sends a WM_EXITSIZEMOVE message.
+
+				}
+				else // API call such as SetWindowPos or mSwapChain->SetFullscreenState.
+				{
+					OnResize();
+				}
+			}
+		}
+		return 0;
+
+	case WM_ENTERSIZEMOVE:
+		mAppPaused = true;
+		mResizing = true;
+		return 0;
+
+	case WM_EXITSIZEMOVE:
+		mAppPaused = false;
+		mResizing = false;
+		OnResize();
+		return 0;
+
+		// Catch this message so to prevent the window from becoming too small.
+	case WM_GETMINMAXINFO:
+		((MINMAXINFO*)lParam)->ptMinTrackSize.x = 200;
+		((MINMAXINFO*)lParam)->ptMinTrackSize.y = 200;
+		return 0;
+
 	case WM_DESTROY:
 		PostQuitMessage(0);
+		return 0;
+
+	// The WM_MENUCHAR message is sent when a menu is active and the user presses 
+	// a key that does not correspond to any mnemonic or accelerator key. 
+	case WM_MENUCHAR:
+		// Don't beep when we alt-enter.
+		return MAKELRESULT(0, MNC_CLOSE);
 	}
 	return DefWindowProc(hwnd, msg, wParam, lParam);
 }
@@ -32,6 +121,9 @@ D3DApp::D3DApp(HINSTANCE hInstance) :
 	m4xMsaaQuality(0),
 	mEnable4xMsaa(false),
 	mAppPaused(false),
+	mMinimized(false),
+	mMaximized(false),
+	mResizing(false),
 
 	mD3DDevice(0),
 	mD3DImmediateContext(0),

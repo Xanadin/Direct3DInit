@@ -29,6 +29,9 @@ protected:
 
 	// FSM
 	bool mAppPaused;
+	bool mMinimized;
+	bool mMaximized;
+	bool mResizing;
 
 	// CLIENT STATS
 	int mClientWidth;
