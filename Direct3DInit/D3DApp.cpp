@@ -1,5 +1,6 @@
 #include "D3DApp.h"
 #pragma comment(lib, "d3d11.lib")
+#include <sstream>	//Usato solo nella fz CalculateFrameStats per wostringstream
 
 namespace
 {
@@ -19,10 +20,12 @@ LRESULT D3DApp::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		if (LOWORD(wParam) == WA_INACTIVE)
 		{
 			mAppPaused = true;
+			mTimer.Stop();
 		}
 		else
 		{
 			mAppPaused = false;
+			mTimer.Start();
 		}
 		return 0;
 
@@ -51,7 +54,6 @@ LRESULT D3DApp::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 					mAppPaused = false;
 					mMinimized = false;
 					OnResize();
-
 				}
 				else if (mMaximized)
 				{
@@ -61,7 +63,6 @@ LRESULT D3DApp::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 				}
 				else if (mResizing)
 				{
-
 					// If user is dragging the resize bars, we do not resize 
 					// the buffers here because as the user continuously 
 					// drags the resize bars, a stream of WM_SIZE messages are
@@ -83,11 +84,13 @@ LRESULT D3DApp::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	case WM_ENTERSIZEMOVE:
 		mAppPaused = true;
 		mResizing = true;
+		mTimer.Stop();
 		return 0;
 
 	case WM_EXITSIZEMOVE:
 		mAppPaused = false;
 		mResizing = false;
+		mTimer.Start();
 		OnResize();
 		return 0;
 
@@ -106,6 +109,22 @@ LRESULT D3DApp::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	case WM_MENUCHAR:
 		// Don't beep when we alt-enter.
 		return MAKELRESULT(0, MNC_CLOSE);
+
+	case WM_LBUTTONDOWN:
+	case WM_MBUTTONDOWN:
+	case WM_RBUTTONDOWN:
+		OnMouseDown(wParam, ((int)(short)LOWORD(lParam)), ((int)(short)HIWORD(lParam)));
+		return 0;
+
+	case WM_LBUTTONUP:
+	case WM_MBUTTONUP:
+	case WM_RBUTTONUP:
+		OnMouseUp(wParam, ((int)(short)LOWORD(lParam)), ((int)(short)HIWORD(lParam)));
+		return 0;
+
+	case WM_MOUSEMOVE:
+		OnMouseMove(wParam, ((int)(short)LOWORD(lParam)), ((int)(short)HIWORD(lParam)));
+		return 0;
 	}
 	return DefWindowProc(hwnd, msg, wParam, lParam);
 }
@@ -151,6 +170,8 @@ int D3DApp::Run()
 {
 	MSG msg = { 0 };
 
+	mTimer.Reset();
+
 	while (msg.message != WM_QUIT)
 	{
 		if (PeekMessage(&msg, 0, 0, 0, PM_REMOVE))
@@ -160,9 +181,11 @@ int D3DApp::Run()
 		}
 		else
 		{
+			mTimer.Tick();
 			if (!mAppPaused)
 			{
-				UpdateScene();
+				CalculateFrameStats();
+				UpdateScene(mTimer.DeltaTime());
 				DrawScene();
 			}
 			else
@@ -368,4 +391,26 @@ void D3DApp::OnResize()
 	mScreenViewport.MaxDepth = 1.0f;
 
 	mD3DImmediateContext->RSSetViewports(1, &mScreenViewport);
+}
+
+void D3DApp::CalculateFrameStats()
+{
+	static int frameCnt = 0;
+	static float timeElapsed = 0.0f;
+
+	frameCnt++;
+	if ((mTimer.TotalTime() - timeElapsed) >= 1.0f)
+	// Calcola la media su 1 sec
+	{
+		float fps = (float)frameCnt;
+		float mspf = 1000.0f / fps;
+
+		std::wostringstream outs;
+		outs.precision(6);
+		outs << mMainWndCaption << L"    " << L"FPS: " << fps << L"    " << L"Frame Time: " << mspf << L" (ms)";
+		SetWindowText(mhMainWnd, outs.str().c_str());
+
+		frameCnt = 0;
+		timeElapsed += 1.0f;
+	}
 }

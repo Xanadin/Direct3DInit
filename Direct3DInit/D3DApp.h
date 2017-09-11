@@ -3,6 +3,7 @@
 #include <Windows.h>
 #include <d3d11.h>
 #include "D3DUtil.h"
+#include "GameTimer.h"
 #include <string>
 
 class D3DApp
@@ -15,13 +16,19 @@ public:
 
 	virtual bool Init();
 	virtual void OnResize();
-	virtual void UpdateScene() = 0;
+	virtual void UpdateScene(float dt) = 0;
 	virtual void DrawScene() = 0;
 	virtual LRESULT MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
+
+	virtual void OnMouseDown(WPARAM btnState, int x, int y) { }
+	virtual void OnMouseUp(WPARAM btnState, int x, int y) { }
+	virtual void OnMouseMove(WPARAM btnState, int x, int y) { }
 
 protected:
 	bool InitMainWindow();
 	bool InitDirect3D();
+
+	void CalculateFrameStats();
 
 	// WINDOWS
 	HINSTANCE mhAppInst;
@@ -37,6 +44,7 @@ protected:
 	int mClientWidth;
 	int mClientHeight;
 	std::wstring mMainWndCaption;
+	GameTimer mTimer;
 
 	// DIRECT3D
 	ID3D11Device* mD3DDevice;

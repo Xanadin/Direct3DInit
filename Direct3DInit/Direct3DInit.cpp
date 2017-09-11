@@ -8,7 +8,7 @@ public:
 
 	bool Init();
 	void OnResize();
-	void UpdateScene();
+	void UpdateScene(float dt);
 	void DrawScene();
 };
 
@@ -35,7 +35,7 @@ InitDirect3DApp::~InitDirect3DApp()
 
 }
 
-void InitDirect3DApp::UpdateScene()
+void InitDirect3DApp::UpdateScene(float dt)
 {
 
 }
