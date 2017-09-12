@@ -1,6 +1,8 @@
 #include "D3DApp.h"
+#pragma comment(lib, "dxgi.lib")
 #pragma comment(lib, "d3d11.lib")
 #include <sstream>	//Usato solo nella fz CalculateFrameStats per wostringstream
+#include <vector>
 
 namespace
 {
@@ -149,7 +151,7 @@ D3DApp::D3DApp(HINSTANCE hInstance) :
 	mSwapChain(0),
 	mDepthStencilBuffer(0),
 	mRenderTargetView(0),
-	mDepthStencilView(0)
+mDepthStencilView(0)
 {
 	ZeroMemory(&mScreenViewport, sizeof(D3D11_VIEWPORT));
 	gD3DApp = this;
@@ -200,6 +202,7 @@ int D3DApp::Run()
 
 bool D3DApp::Init()
 {
+	MyInitDirect3D();
 	if (!InitMainWindow()) return false;
 	if (!InitDirect3D()) return false;
 	return true;
@@ -240,6 +243,83 @@ bool D3DApp::InitMainWindow()
 	return true;
 }
 
+
+bool D3DApp::MyInitDirect3D()
+{
+	IDXGIFactory* pFactory = 0;
+	//Create Factory
+	HR(CreateDXGIFactory(__uuidof(IDXGIFactory), (void**)&pFactory));
+
+	//Enumerate Adapters
+	IDXGIAdapter* pAdapter = 0;
+	std::vector<IDXGIAdapter*> vAdapters;
+	for (unsigned int i = 0; pFactory->EnumAdapters(i, &pAdapter) != DXGI_ERROR_NOT_FOUND; ++i)
+	{
+
+		vAdapters.push_back(pAdapter);
+	}
+	unsigned int adaptersCnt = vAdapters.size();
+	DXGI_ADAPTER_DESC* desc = new DXGI_ADAPTER_DESC[adaptersCnt];
+	for (unsigned int i = 0; i < adaptersCnt; ++i) vAdapters[i]->GetDesc(&desc[i]);
+
+	//Enumerate Outputs
+	IDXGIOutput* pOutput = 0;
+	std::vector<IDXGIOutput*> vOutputs; //Monitors
+	unsigned int* outXAdapter = new unsigned int[adaptersCnt];
+	for (unsigned int i = 0; i < adaptersCnt; ++i)
+	{
+		unsigned int j = 0;
+		while ( vAdapters[i]->EnumOutputs(j, &pOutput) != DXGI_ERROR_NOT_FOUND)
+		{
+			vOutputs.push_back(pOutput);
+			++j;
+		}
+		outXAdapter[i] = j;
+	}
+	unsigned int outputCnt = vOutputs.size();
+
+	//Get valid Displaymodes for DXGI_FORMAT_R8G8B8A8_UNORM format
+	DXGI_FORMAT format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	DXGI_MODE_DESC** displayModes = new DXGI_MODE_DESC*[outputCnt];
+	unsigned int* dispModesXOut = new unsigned int[outputCnt];
+	for (unsigned int i = 0; i < outputCnt; ++i)
+	{
+		unsigned int numModes = 0;
+		vOutputs[i]->GetDisplayModeList(format, 0, &numModes, 0);
+		displayModes[i] = new DXGI_MODE_DESC[numModes];
+		vOutputs[i]->GetDisplayModeList(format, 0, &numModes, displayModes[i]);
+		dispModesXOut[i] = numModes;
+	}
+
+	// Print display modes
+	std::wostringstream outs;
+	outs << L"DisplayModes" << std::endl;
+	for (unsigned int i = 0; i < adaptersCnt; ++i)
+	{
+		outs << L"DEFAULT ADAPTER" << std::endl;
+		outs << L"Adapter " << i << ":   " << desc[i].Description << std::endl;
+		outs << L"Num. Outputs for Adapter " << i << L" = " << outXAdapter[i] << std::endl;
+		for (unsigned int j = 0; j < outXAdapter[i]; ++j)
+		{
+			outs << L"Output " << j << std::endl;
+			for (unsigned int k = 0; k < dispModesXOut[j]; ++k)
+				outs << L"WIDTH = " << displayModes[i][j].Width << L" HEIGHT = " << displayModes[i][j].Height 
+					 << L" REFRESH = " << displayModes[i][j].RefreshRate.Numerator << L"/" << displayModes[i][j].RefreshRate.Denominator << std::endl;
+		}
+	}
+	OutputDebugString(outs.str().c_str());
+
+	delete[] dispModesXOut;
+	for (unsigned int i = 0; i < outputCnt; ++i) delete[] displayModes[i];
+	delete[] displayModes;
+	for (std::vector<IDXGIOutput*>::iterator it = vOutputs.begin(); it != vOutputs.end(); ++it) ReleaseCOM((*it));
+	delete[] outXAdapter;
+	delete[] desc;
+	for (std::vector<IDXGIAdapter*>::iterator it = vAdapters.begin(); it != vAdapters.end(); ++it) ReleaseCOM((*it));
+	ReleaseCOM(pFactory);
+	return true;
+}
+
 bool D3DApp::InitDirect3D()
 {
 	// Create the device and device context
@@ -276,6 +356,20 @@ bool D3DApp::InitDirect3D()
 	HR(mD3DDevice->CheckMultisampleQualityLevels(DXGI_FORMAT_R8G8B8A8_UNORM, 4, &m4xMsaaQuality));
 	assert(m4xMsaaQuality > 0);
 
+	// Swap chain creation
+
+	// To correctly create the swap chain, we must use the IDXGIFactory that was
+	// used to create the device.  If we tried to use a different IDXGIFactory instance
+	// (by calling CreateDXGIFactory), we get an error: "IDXGIFactory::CreateSwapChain: 
+	// This function is being called with a device from a different IDXGIFactory."
+
+	IDXGIDevice* dxgiDevice = 0;
+	HR(mD3DDevice->QueryInterface(__uuidof(IDXGIDevice), (void**)&dxgiDevice));
+	IDXGIAdapter* dxgiAdapter = 0;
+	HR(dxgiDevice->GetParent(__uuidof(IDXGIAdapter), (void**)&dxgiAdapter));
+	IDXGIFactory* dxgiFactory = 0;
+	HR(dxgiAdapter->GetParent(__uuidof(IDXGIFactory), (void**)&dxgiFactory));
+
 	// Fill out a DXGI_SWAP_CHAIN_DESC to describe our swap chain.
 	DXGI_SWAP_CHAIN_DESC sd;
 	sd.BufferDesc.Width = mClientWidth;
@@ -302,18 +396,6 @@ bool D3DApp::InitDirect3D()
 	sd.Windowed = true;
 	sd.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
 	sd.Flags = 0;
-
-	// To correctly create the swap chain, we must use the IDXGIFactory that was
-	// used to create the device.  If we tried to use a different IDXGIFactory instance
-	// (by calling CreateDXGIFactory), we get an error: "IDXGIFactory::CreateSwapChain: 
-	// This function is being called with a device from a different IDXGIFactory."
-	
-	IDXGIDevice* dxgiDevice = 0;
-	HR(mD3DDevice->QueryInterface(__uuidof(IDXGIDevice), (void**)&dxgiDevice));
-	IDXGIAdapter* dxgiAdapter = 0;
-	HR(dxgiDevice->GetParent(__uuidof(IDXGIAdapter), (void**)&dxgiAdapter));
-	IDXGIFactory* dxgiFactory = 0;
-	HR(dxgiAdapter->GetParent(__uuidof(IDXGIFactory), (void**)&dxgiFactory));
 
 	HR(dxgiFactory->CreateSwapChain(mD3DDevice, &sd, &mSwapChain));
 	ReleaseCOM(dxgiDevice);

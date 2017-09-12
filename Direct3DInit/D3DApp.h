@@ -28,6 +28,8 @@ protected:
 	bool InitMainWindow();
 	bool InitDirect3D();
 
+	bool MyInitDirect3D();
+
 	void CalculateFrameStats();
 
 	// WINDOWS
