@@ -251,7 +251,12 @@ bool D3DApp::MyInitDirect3D()
 	HR(CreateDXGIFactory(__uuidof(IDXGIFactory), (void**)&pFactory));
 
 	//Enumerate Adapters
+
+
 	IDXGIAdapter* pAdapter = 0;
+
+	pFactory->EnumAdapters(0, &pAdapter);
+	/*
 	std::vector<IDXGIAdapter*> vAdapters;
 	for (unsigned int i = 0; pFactory->EnumAdapters(i, &pAdapter) != DXGI_ERROR_NOT_FOUND; ++i)
 	{
@@ -261,9 +266,13 @@ bool D3DApp::MyInitDirect3D()
 	unsigned int adaptersCnt = vAdapters.size();
 	DXGI_ADAPTER_DESC* desc = new DXGI_ADAPTER_DESC[adaptersCnt];
 	for (unsigned int i = 0; i < adaptersCnt; ++i) vAdapters[i]->GetDesc(&desc[i]);
+	*/
 
 	//Enumerate Outputs
 	IDXGIOutput* pOutput = 0;
+
+	pAdapter->EnumOutputs(0, &pOutput);
+	/*
 	std::vector<IDXGIOutput*> vOutputs; //Monitors
 	unsigned int* outXAdapter = new unsigned int[adaptersCnt];
 	for (unsigned int i = 0; i < adaptersCnt; ++i)
@@ -277,9 +286,17 @@ bool D3DApp::MyInitDirect3D()
 		outXAdapter[i] = j;
 	}
 	unsigned int outputCnt = vOutputs.size();
+	*/
 
 	//Get valid Displaymodes for DXGI_FORMAT_R8G8B8A8_UNORM format
+
 	DXGI_FORMAT format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	unsigned int numModes = 0;
+	DXGI_MODE_DESC* displayModes = 0;
+	pOutput->GetDisplayModeList(format, 0, &numModes, 0);
+	displayModes = new DXGI_MODE_DESC[numModes];
+	pOutput->GetDisplayModeList(format, 0, &numModes, displayModes);
+	/*
 	DXGI_MODE_DESC** displayModes = new DXGI_MODE_DESC*[outputCnt];
 	unsigned int* dispModesXOut = new unsigned int[outputCnt];
 	for (unsigned int i = 0; i < outputCnt; ++i)
@@ -290,10 +307,17 @@ bool D3DApp::MyInitDirect3D()
 		vOutputs[i]->GetDisplayModeList(format, 0, &numModes, displayModes[i]);
 		dispModesXOut[i] = numModes;
 	}
+	*/
 
 	// Print display modes
 	std::wostringstream outs;
 	outs << L"DisplayModes" << std::endl;
+	outs << L"DEFAULT ADAPTER" << std::endl;
+	outs << L"OUTPUT N°0" << std::endl;
+	for (unsigned int i = 0; i < numModes; ++i)
+		outs << L"WIDTH = " << displayModes[i].Width << L" HEIGHT = " << displayModes[i].Height
+		<< L" REFRESH = " << displayModes[i].RefreshRate.Numerator << L"/" << displayModes[i].RefreshRate.Denominator << std::endl;
+	/*
 	for (unsigned int i = 0; i < adaptersCnt; ++i)
 	{
 		outs << L"DEFAULT ADAPTER" << std::endl;
@@ -307,16 +331,23 @@ bool D3DApp::MyInitDirect3D()
 					 << L" REFRESH = " << displayModes[i][j].RefreshRate.Numerator << L"/" << displayModes[i][j].RefreshRate.Denominator << std::endl;
 		}
 	}
+	*/
 	OutputDebugString(outs.str().c_str());
-
+	/*
 	delete[] dispModesXOut;
 	for (unsigned int i = 0; i < outputCnt; ++i) delete[] displayModes[i];
+	*/
 	delete[] displayModes;
+	/*
 	for (std::vector<IDXGIOutput*>::iterator it = vOutputs.begin(); it != vOutputs.end(); ++it) ReleaseCOM((*it));
 	delete[] outXAdapter;
 	delete[] desc;
 	for (std::vector<IDXGIAdapter*>::iterator it = vAdapters.begin(); it != vAdapters.end(); ++it) ReleaseCOM((*it));
+	*/
+	ReleaseCOM(pOutput);
+	ReleaseCOM(pAdapter);
 	ReleaseCOM(pFactory);
+
 	return true;
 }
 
