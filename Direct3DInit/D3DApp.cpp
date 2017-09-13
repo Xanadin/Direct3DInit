@@ -255,8 +255,7 @@ bool D3DApp::MyInitDirect3D()
 
 	IDXGIAdapter* pAdapter = 0;
 
-	pFactory->EnumAdapters(0, &pAdapter);
-	/*
+
 	std::vector<IDXGIAdapter*> vAdapters;
 	for (unsigned int i = 0; pFactory->EnumAdapters(i, &pAdapter) != DXGI_ERROR_NOT_FOUND; ++i)
 	{
@@ -266,13 +265,9 @@ bool D3DApp::MyInitDirect3D()
 	unsigned int adaptersCnt = vAdapters.size();
 	DXGI_ADAPTER_DESC* desc = new DXGI_ADAPTER_DESC[adaptersCnt];
 	for (unsigned int i = 0; i < adaptersCnt; ++i) vAdapters[i]->GetDesc(&desc[i]);
-	*/
 
 	//Enumerate Outputs
 	IDXGIOutput* pOutput = 0;
-
-	pAdapter->EnumOutputs(0, &pOutput);
-	/*
 	std::vector<IDXGIOutput*> vOutputs; //Monitors
 	unsigned int* outXAdapter = new unsigned int[adaptersCnt];
 	for (unsigned int i = 0; i < adaptersCnt; ++i)
@@ -286,7 +281,6 @@ bool D3DApp::MyInitDirect3D()
 		outXAdapter[i] = j;
 	}
 	unsigned int outputCnt = vOutputs.size();
-	*/
 
 	//Get valid Displaymodes for DXGI_FORMAT_R8G8B8A8_UNORM format
 
