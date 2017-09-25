@@ -14,6 +14,11 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	return gD3DApp->MsgProc(hwnd, msg, wParam, lParam);
 }
 
+float D3DApp::AspectRatio() const
+{
+	return static_cast<float>(mClientWidth) / mClientHeight;
+}
+
 LRESULT D3DApp::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	switch (msg)
@@ -257,7 +262,7 @@ bool D3DApp::MyInitDirect3D()
 	{
 		vAdapters.push_back(pAdapter);
 	}
-	unsigned int adaptersCnt = vAdapters.size();
+	size_t adaptersCnt = vAdapters.size();
 	DXGI_ADAPTER_DESC* desc = new DXGI_ADAPTER_DESC[adaptersCnt];
 	for (unsigned int i = 0; i < adaptersCnt; ++i) vAdapters[i]->GetDesc(&desc[i]);
 
@@ -275,7 +280,7 @@ bool D3DApp::MyInitDirect3D()
 		}
 		outXAdapter[i] = j;
 	}
-	unsigned int outputCnt = vOutputs.size();
+	size_t outputCnt = vOutputs.size();
 
 	//Get valid Displaymodes for DXGI_FORMAT_R8G8B8A8_UNORM format
 

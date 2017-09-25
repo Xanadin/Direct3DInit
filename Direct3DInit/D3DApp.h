@@ -1,6 +1,8 @@
 #pragma once
 #define UNICODE
 #include <Windows.h>
+#include <DirectXMath.h>
+// #include <DirectXPackedVector.h>
 #include <d3d11.h>
 #include "D3DUtil.h"
 #include "GameTimer.h"
@@ -23,6 +25,8 @@ public:
 	virtual void OnMouseDown(WPARAM btnState, int x, int y) { }
 	virtual void OnMouseUp(WPARAM btnState, int x, int y) { }
 	virtual void OnMouseMove(WPARAM btnState, int x, int y) { }
+
+	float AspectRatio() const;
 
 protected:
 	bool InitMainWindow();

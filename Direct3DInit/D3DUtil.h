@@ -2,7 +2,7 @@
 
 #if defined(DEBUG) || defined(_DEBUG)
 #define _CRTDBG_MAP_ALLOC
-#include <crtdbg.h>
+// #include <crtdbg.h>
 #endif
 
 #include <DirectXMath.h>
@@ -36,3 +36,9 @@ namespace Colors
 	XMGLOBALCONST DirectX::XMVECTORF32 Silver  = { 0.75f, 0.75f, 0.75f, 1.0f };
 	XMGLOBALCONST DirectX::XMVECTORF32 LightSteelBlue = { 0.69f, 0.77f, 0.87f, 1.0f };
 }
+
+class MathHelper
+{
+public:
+	static const float Pi;
+};
