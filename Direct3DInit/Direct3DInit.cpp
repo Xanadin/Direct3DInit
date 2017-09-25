@@ -71,7 +71,18 @@ InitDirect3DApp::~InitDirect3DApp()
 
 void InitDirect3DApp::UpdateScene(float dt)
 {
+	// Convert Spherical to Cartesian coordinates.
+	float x = mRadius * sinf(mPhi) * cosf(mTheta);
+	float z = mRadius * sinf(mPhi) * sinf(mTheta);
+	float y = mRadius * cosf(mPhi);
 
+	// Build the view matrix.
+	DirectX::XMVECTOR pos;
+	DirectX::XMVECTOR target;
+	DirectX::XMVECTOR up;
+
+	DirectX::XMMATRIX V = DirectX::XMMatrixLookAtLH(pos, target, up);
+	DirectX::XMStoreFloat4x4(&mView, V);
 }
 
 void InitDirect3DApp::DrawScene()
