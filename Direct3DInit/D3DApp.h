@@ -1,10 +1,10 @@
 #pragma once
 #define UNICODE
+#include "D3DUtil.h"
 #include <Windows.h>
 #include <DirectXMath.h>
-// #include <DirectXPackedVector.h>
+
 #include <d3d11.h>
-#include "D3DUtil.h"
 #include "GameTimer.h"
 #include <string>
 
