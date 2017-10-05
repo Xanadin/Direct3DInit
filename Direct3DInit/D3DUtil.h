@@ -8,6 +8,8 @@
 #include <DirectXMath.h>
 #include "dxerr.h"
 #include <cassert>
+#include <fstream>
+#include <vector>
 
 #if defined(DEBUG) || defined(_DEBUG)
 	#ifndef HR

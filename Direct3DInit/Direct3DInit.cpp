@@ -1,5 +1,12 @@
 #include "D3DApp.h"
+
 #include "d3dx11effect.h"
+#if defined(DEBUG) || defined(_DEBUG)
+#pragma comment(lib, "Effects11d.lib")
+#else
+#pragma comment(lib, "Effects11.lib")
+#endif
+
 #include <DirectXColors.h>
 #include <d3dcompiler.h>
 
@@ -19,7 +26,11 @@ public:
 	void OnResize();
 	void UpdateScene(float dt);
 	void DrawScene();
-	
+
+	void OnMouseDown(WPARAM btnState, int x, int y);
+	void OnMouseUp(WPARAM btnState, int x, int y);
+	void OnMouseMove(WPARAM btnState, int x, int y);
+
 private:
 	void BuildGeometryBuffers();
 	void BuildFX();
@@ -92,6 +103,16 @@ InitDirect3DApp::~InitDirect3DApp()
 	ReleaseCOM(mInputLayout);
 }
 
+bool InitDirect3DApp::Init()
+{
+	if (!D3DApp::Init()) return false;
+	BuildGeometryBuffers();
+	BuildFX();
+	BuildVertexLayout();
+	return true;
+}
+
+
 void InitDirect3DApp::UpdateScene(float dt)
 {
 	// Convert Spherical to Cartesian coordinates.
@@ -112,7 +133,7 @@ void InitDirect3DApp::DrawScene()
 {
 	assert(mD3DImmediateContext);
 	assert(mSwapChain);
-	mD3DImmediateContext->ClearRenderTargetView(mRenderTargetView, reinterpret_cast<const float*>(&Colors::Blue));
+	mD3DImmediateContext->ClearRenderTargetView(mRenderTargetView, reinterpret_cast<const float*>(&Colors::LightSteelBlue));
 	mD3DImmediateContext->ClearDepthStencilView(mDepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
 	mD3DImmediateContext->IASetInputLayout(mInputLayout);
@@ -127,17 +148,46 @@ void InitDirect3DApp::DrawScene()
 	DirectX::XMMATRIX view =  DirectX::XMLoadFloat4x4(&mView);
 	DirectX::XMMATRIX proj =  DirectX::XMLoadFloat4x4(&mProj);
 	DirectX::XMMATRIX worldViewProj = world * view * proj;
-
+	mfxWorldViewProj->SetMatrix(reinterpret_cast<float*>(&worldViewProj));
+	D3DX11_TECHNIQUE_DESC techDesc;
+	mTech->GetDesc(&techDesc);
+	for (UINT p = 0; p < techDesc.Passes; ++p)
+	{
+		mTech->GetPassByIndex(p)->Apply(0, mD3DImmediateContext);
+		mD3DImmediateContext->DrawIndexed(36, 0, 0);
+	}
 	HR(mSwapChain->Present(0, 0));
 }
 
-bool InitDirect3DApp::Init()
+void InitDirect3DApp::OnMouseDown(WPARAM btnState, int x, int y)
 {
-	if (!D3DApp::Init()) return false;
-	BuildGeometryBuffers();
-	BuildFX();
-	BuildVertexLayout();
-	return true;
+	mLastMousePos.x = x;
+	mLastMousePos.y = y;
+	SetCapture(mhMainWnd);
+}
+void InitDirect3DApp::OnMouseUp(WPARAM btnState, int x, int y)
+{
+	ReleaseCapture();
+}
+void InitDirect3DApp::OnMouseMove(WPARAM btnState, int x, int y)
+{
+	if ((btnState & MK_LBUTTON) != 0)
+	{
+		// Make each pixel correspond to a quarter of a degree.
+		float dx = DirectX::XMConvertToRadians(0.25f * static_cast<float>(x - mLastMousePos.x));
+		float dy = DirectX::XMConvertToRadians(0.25f * static_cast<float>(y - mLastMousePos.y));
+		// Update angles based on input to orbit camera around box.
+		mTheta += dx;
+		mPhi += dy;
+		// Restrict the angle mPhi.
+
+	}
+	else if ((btnState & MK_RBUTTON) != 0)
+	{
+		// Make each pixel correspond to 0.005 unit in the scene.
+	}
+	mLastMousePos.x = x;
+	mLastMousePos.y = y;
 }
 
 void InitDirect3DApp::OnResize()
@@ -210,20 +260,17 @@ void InitDirect3DApp::BuildGeometryBuffers()
 
 void InitDirect3DApp::BuildFX()
 {
-	DWORD shaderFlags = 0;
-	#if defined(DEBUG) | defined(_DEBUG)
-	shaderFlags |= D3D10_SHADER_DEBUG;
-	shaderFlags |= D3D10_SHADER_SKIP_OPTIMIZATION;
-	#endif
+	std::ifstream fin("color.fxo", std::ios::binary);
+	fin.seekg(0, std::ios_base::end);
+	int size = (int)fin.tellg();
+	fin.seekg(0, std::ios_base::beg);
+	std::vector<char> compiledShader(size);
+	fin.read(&compiledShader[0], size);
+	fin.close();
 
-	ID3D10Blob* compiledShader = 0;
-	ID3D10Blob* compilationMsgs = 0;
-	HRESULT hr;
-
-	HR(D3DX11CreateEffectFromMemory(compiledShader->GetBufferPointer(), compiledShader->GetBufferSize(), 0, mD3DDevice, &mFX));
-	ReleaseCOM(compiledShader);
+	HR(D3DX11CreateEffectFromMemory(&compiledShader[0], size, 0, mD3DDevice, &mFX));
 	mTech = mFX->GetTechniqueByName("ColorTech");
-	mfxWorldViewProj = mFX->GetVariableByName("gWorldViewProj")->AsMatrix;
+	mfxWorldViewProj = mFX->GetVariableByName("gWorldViewProj")->AsMatrix();
 }
 
 void InitDirect3DApp::BuildVertexLayout()
@@ -235,6 +282,6 @@ void InitDirect3DApp::BuildVertexLayout()
 	};
 
 	D3DX11_PASS_DESC passDesc;
-
+	mTech->GetPassByIndex(0)->GetDesc(&passDesc);
 	HR(mD3DDevice->CreateInputLayout(vertexDesc, 2, passDesc.pIAInputSignature, passDesc.IAInputSignatureSize, &mInputLayout));
 }

@@ -44,4 +44,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="color.fx">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+  </ItemGroup>
 </Project>
