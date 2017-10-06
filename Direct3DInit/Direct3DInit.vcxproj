@@ -134,16 +134,16 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
       </ShaderType>
       <FileType>Document</FileType>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">fxc /Fc /Od /Zi /T fx_5_0 /Fo "color.fxo" "%(FullPath)"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">fxc /Fc /Od /Zi /T fx_5_0 /Fo "colorD.fxo" "%(FullPath)"</Command>
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">fxc compile for debug: %(FullPath)</Message>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">color.fxo</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">colorD.fxo</Outputs>
       <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
       </LinkObjects>
       <TreatOutputAsContent Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
       </TreatOutputAsContent>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">fxc /T fx_5_0 /Fo "color1.fxo" "%(FullPath)"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">fxc /T fx_5_0 /Fo "color.fxo" "%(FullPath)"</Command>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">fxc compile for release: %(FullPath)</Message>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">color1.fxo</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">color.fxo</Outputs>
       <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
       </LinkObjects>
       <TreatOutputAsContent Condition="'$(Configuration)|$(Platform)'=='Release|x64'">

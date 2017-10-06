@@ -180,11 +180,17 @@ void InitDirect3DApp::OnMouseMove(WPARAM btnState, int x, int y)
 		mTheta += dx;
 		mPhi += dy;
 		// Restrict the angle mPhi.
-
+		mPhi = MathHelper::Clamp(mPhi, 0.1f, MathHelper::Pi - 0.1f);
 	}
 	else if ((btnState & MK_RBUTTON) != 0)
 	{
 		// Make each pixel correspond to 0.005 unit in the scene.
+		float dx = 0.005f * static_cast<float>(x - mLastMousePos.x);
+		float dy = 0.005f * static_cast<float>(y - mLastMousePos.y);
+		// Update the camera radius based on input.
+		mRadius += dx - dy;
+		// Restrict the radius.
+		mRadius = MathHelper::Clamp(mRadius, 3.0f, 15.0f);
 	}
 	mLastMousePos.x = x;
 	mLastMousePos.y = y;
@@ -260,7 +266,11 @@ void InitDirect3DApp::BuildGeometryBuffers()
 
 void InitDirect3DApp::BuildFX()
 {
+	#if defined(DEBUG) || defined(_DEBUG)
 	std::ifstream fin("color.fxo", std::ios::binary);
+	#else
+	std::ifstream fin("colorD.fxo", std::ios::binary);
+	#endif
 	fin.seekg(0, std::ios_base::end);
 	int size = (int)fin.tellg();
 	fin.seekg(0, std::ios_base::beg);
