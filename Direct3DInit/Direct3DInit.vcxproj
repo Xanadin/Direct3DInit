@@ -118,12 +118,14 @@
     <ClCompile Include="Direct3DInit.cpp" />
     <ClCompile Include="dxerr.cpp" />
     <ClCompile Include="GameTimer.cpp" />
+    <ClCompile Include="GeometryGenerator.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="D3DApp.h" />
     <ClInclude Include="D3DUtil.h" />
     <ClInclude Include="dxerr.h" />
     <ClInclude Include="GameTimer.h" />
+    <ClInclude Include="GeometryGenerator.h" />
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="color.fx">

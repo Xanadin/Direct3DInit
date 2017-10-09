@@ -1,12 +1,11 @@
 #include "D3DApp.h"
-
 #include "d3dx11effect.h"
 #if defined(DEBUG) || defined(_DEBUG)
 #pragma comment(lib, "Effects11d.lib")
 #else
 #pragma comment(lib, "Effects11.lib")
 #endif
-
+#include "GeometryGenerator.h"
 #include <DirectXColors.h>
 #include <d3dcompiler.h>
 
@@ -73,8 +72,8 @@ InitDirect3DApp::InitDirect3DApp(HINSTANCE hInstance) :
 	mBoxVB(0), 
 	mBoxIB(0),
 	mInputLayout(0),
-	mTheta(1.5f * MathHelper::Pi), 
-	mPhi(0.25f * MathHelper::Pi),
+	mTheta(1.5f * DirectX::XM_PI), 
+	mPhi(DirectX::XM_PIDIV4),
 	mRadius(5.0f),
 
 	mFX(0),
@@ -112,6 +111,13 @@ bool InitDirect3DApp::Init()
 	return true;
 }
 
+void InitDirect3DApp::OnResize()
+{
+	D3DApp::OnResize();
+	// The window resized, so update the aspect ratio and recompute the projection matrix.
+	DirectX::XMMATRIX P = DirectX::XMMatrixPerspectiveFovLH(DirectX::XM_PIDIV4, AspectRatio(), 1.0f, 1000.0f);
+	DirectX::XMStoreFloat4x4(&mProj, P);
+}
 
 void InitDirect3DApp::UpdateScene(float dt)
 {
@@ -133,7 +139,7 @@ void InitDirect3DApp::DrawScene()
 {
 	assert(mD3DImmediateContext);
 	assert(mSwapChain);
-	mD3DImmediateContext->ClearRenderTargetView(mRenderTargetView, reinterpret_cast<const float*>(&Colors::LightSteelBlue));
+	mD3DImmediateContext->ClearRenderTargetView(mRenderTargetView, reinterpret_cast<const float*>(&DirectX::Colors::LightSteelBlue));
 	mD3DImmediateContext->ClearDepthStencilView(mDepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
 	mD3DImmediateContext->IASetInputLayout(mInputLayout);
@@ -180,7 +186,7 @@ void InitDirect3DApp::OnMouseMove(WPARAM btnState, int x, int y)
 		mTheta += dx;
 		mPhi += dy;
 		// Restrict the angle mPhi.
-		mPhi = MathHelper::Clamp(mPhi, 0.1f, MathHelper::Pi - 0.1f);
+		mPhi = MathHelper::Clamp(mPhi, 0.1f, DirectX::XM_PI - 0.1f);
 	}
 	else if ((btnState & MK_RBUTTON) != 0)
 	{
@@ -196,27 +202,19 @@ void InitDirect3DApp::OnMouseMove(WPARAM btnState, int x, int y)
 	mLastMousePos.y = y;
 }
 
-void InitDirect3DApp::OnResize()
-{
-	D3DApp::OnResize();
-	// The window resized, so update the aspect ratio and recompute the projection matrix.
-	DirectX::XMMATRIX P = DirectX::XMMatrixPerspectiveFovLH(0.25f * MathHelper::Pi, AspectRatio(), 1.0f, 1000.0f);
-	DirectX::XMStoreFloat4x4(&mProj, P);
-}
-
 void InitDirect3DApp::BuildGeometryBuffers()
 {
 	// Create vertex buffer
 	Vertex vertices[] =
 	{
-		{ DirectX::XMFLOAT3(-1.0f, -1.0f, -1.0f), DirectX::XMFLOAT4((const float*)&Colors::White  ) },
-		{ DirectX::XMFLOAT3(-1.0f, +1.0f, -1.0f), DirectX::XMFLOAT4((const float*)&Colors::Black  ) },
-		{ DirectX::XMFLOAT3(+1.0f, +1.0f, -1.0f), DirectX::XMFLOAT4((const float*)&Colors::Red    ) },
-		{ DirectX::XMFLOAT3(+1.0f, -1.0f, -1.0f), DirectX::XMFLOAT4((const float*)&Colors::Green  ) },
-		{ DirectX::XMFLOAT3(-1.0f, -1.0f, +1.0f), DirectX::XMFLOAT4((const float*)&Colors::Blue   ) },
-		{ DirectX::XMFLOAT3(-1.0f, +1.0f, +1.0f), DirectX::XMFLOAT4((const float*)&Colors::Yellow ) },
-		{ DirectX::XMFLOAT3(+1.0f, +1.0f, +1.0f), DirectX::XMFLOAT4((const float*)&Colors::Cyan   ) },
-		{ DirectX::XMFLOAT3(+1.0f, -1.0f, +1.0f), DirectX::XMFLOAT4((const float*)&Colors::Magenta) }
+		{ DirectX::XMFLOAT3(-1.0f, -1.0f, -1.0f), DirectX::XMFLOAT4((const float*)&DirectX::Colors::White  ) },
+		{ DirectX::XMFLOAT3(-1.0f, +1.0f, -1.0f), DirectX::XMFLOAT4((const float*)&DirectX::Colors::Black  ) },
+		{ DirectX::XMFLOAT3(+1.0f, +1.0f, -1.0f), DirectX::XMFLOAT4((const float*)&DirectX::Colors::Red    ) },
+		{ DirectX::XMFLOAT3(+1.0f, -1.0f, -1.0f), DirectX::XMFLOAT4((const float*)&DirectX::Colors::Green  ) },
+		{ DirectX::XMFLOAT3(-1.0f, -1.0f, +1.0f), DirectX::XMFLOAT4((const float*)&DirectX::Colors::Blue   ) },
+		{ DirectX::XMFLOAT3(-1.0f, +1.0f, +1.0f), DirectX::XMFLOAT4((const float*)&DirectX::Colors::Yellow ) },
+		{ DirectX::XMFLOAT3(+1.0f, +1.0f, +1.0f), DirectX::XMFLOAT4((const float*)&DirectX::Colors::Cyan   ) },
+		{ DirectX::XMFLOAT3(+1.0f, -1.0f, +1.0f), DirectX::XMFLOAT4((const float*)&DirectX::Colors::Magenta) }
 	};
 
 	D3D11_BUFFER_DESC vbd;
@@ -274,11 +272,12 @@ void InitDirect3DApp::BuildFX()
 	fin.seekg(0, std::ios_base::end);
 	int size = (int)fin.tellg();
 	fin.seekg(0, std::ios_base::beg);
-	std::vector<char> compiledShader(size);
+	char* compiledShader = new char[size];
 	fin.read(&compiledShader[0], size);
 	fin.close();
 
 	HR(D3DX11CreateEffectFromMemory(&compiledShader[0], size, 0, mD3DDevice, &mFX));
+	delete[] compiledShader;
 	mTech = mFX->GetTechniqueByName("ColorTech");
 	mfxWorldViewProj = mFX->GetVariableByName("gWorldViewProj")->AsMatrix();
 }
