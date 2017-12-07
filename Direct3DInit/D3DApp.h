@@ -8,6 +8,10 @@
 #include "GameTimer.h"
 #include <string>
 
+/* Troppa roba è contenuta nella classe sotto:
+System info che poi vanno condivise. Meglio allora una struttura con funzioni che la inizializzino
+
+*/
 class D3DApp
 {
 public:
